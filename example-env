@@ -1,0 +1,6 @@
+
+POSTGRES_DB=project_db
+POSTGRES_USER=project_user
+POSTGRES_PASSWORD=project_password
+MAX_BOT_TOKEN=your_max_bot_token_here
+WEBHOOK_URL=https://your-domain.com
