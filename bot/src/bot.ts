@@ -1,4 +1,7 @@
 import { Bot } from '@maxhub/max-bot-api';
+import { registerCommands } from './commands';
+import { registerMiddlewares } from './middlewares';
+import { registerHandlers } from './handlers';
 
 const token = process.env.MAX_BOT_TOKEN || process.env.BOT_TOKEN;
 if (!token) {
@@ -6,17 +9,17 @@ if (!token) {
 	process.exit(1);
 }
 
-// Создайте экземпляр класса Bot и передайте ему токен 
+// Экземпляр бота
 const bot = new Bot(token);
 
-// Добавьте слушатели обновлений
-// MAX Bot API будет вызывать их, когда пользователи взаимодействуют с ботом
+// Подключаем middleware
+registerMiddlewares(bot);
 
-// Обработчик для команды '/start'
-bot.command('start', (ctx) => ctx.reply('Добро пожаловать!'));
+// Регистрируем команды (паттерн: класс в папке commands + добавление в registerCommands)
+registerCommands(bot);
 
-// Обработчик для любого другого сообщения
-bot.on('message_created', (ctx) => ctx.reply('Новое сообщение'));
+// Прочие обработчики событий
+registerHandlers(bot);
 
-// Теперь можно запустить бота, чтобы он подключился к серверам MAX и ждал обновлений
+// Старт
 bot.start();
