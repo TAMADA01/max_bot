@@ -69,8 +69,10 @@ services:
     ports:
       - "3002:3002"
     depends_on:
-      - postgres
-      - api
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
     networks:
       - project_network
     restart: unless-stopped

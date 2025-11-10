@@ -14,7 +14,7 @@ if (!token) {
 // Инициализация базы данных
 async function start() {
 	try {
-		initDatabase();
+		await initDatabase();
 		await initTables();
 		
 		// Создаем сервисы
