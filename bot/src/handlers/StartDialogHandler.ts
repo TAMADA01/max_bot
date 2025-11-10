@@ -1,10 +1,16 @@
 import { Bot } from "@maxhub/max-bot-api";
-import { startKeyboard } from '../keyboards/start';
+import { getStartKeyboard } from '../keyboards/start';
+import { CustomContext } from "../types/context";
+import { BotHandler } from "./Handler";
 
-export function startDialogCommand(bot: Bot){
-    bot.on('bot_started', (ctx) => {
-        ctx.reply('Добро пожаловать!', {
-            attachments: [startKeyboard]
+export class StartDialogHandler implements BotHandler {
+    register(bot: Bot): void {
+        bot.on('bot_started', async (ctx) => {
+        const customCtx = ctx as CustomContext
+        customCtx.reply('Добро пожаловать!', {
+            attachments: [getStartKeyboard(customCtx) as any]
         });
     });
+    }
+
 }

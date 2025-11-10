@@ -3,7 +3,6 @@ import { registerCommands } from './commands';
 import { registerMiddlewares } from './middlewares';
 import { registerHandlers } from './handlers';
 import { setMyCommands } from './SetMyCommands';
-import { startDialogCommand } from './handlers/StartDialogHandler';
 import { initDatabase, initTables } from './services/database';
 import { AuthService } from './services/authService';
 
@@ -25,9 +24,7 @@ async function start() {
 		// Экземпляр бота
 		const bot = new Bot(token);
 
-startDialogCommand(bot)
-
-setMyCommands(bot);
+    setMyCommands(bot);
 		
 		// Подключаем middleware (должен быть первым для расширения контекста)
 		registerMiddlewares(bot, authService);
