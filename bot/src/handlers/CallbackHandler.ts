@@ -1,9 +1,8 @@
 import { Bot } from '@maxhub/max-bot-api';
 import { BotHandler } from './Handler';
 import { CustomContext } from '../types/context';
-import { getStudentKeyboard } from '../keyboards/student';
-import { getStartKeyboard } from '../keyboards/start';
 import { getAuthCancelKeyboard } from '../keyboards/auth';
+import { getAuthorizedStudentKeyboard, getAuthorizedDeaneryKeyboard } from '../keyboards/authorized';
 import { AuthService } from '../services/authService';
 import { authStateManager } from '../services/authState';
 
@@ -19,33 +18,42 @@ export class CallbackHandler implements BotHandler {
 			const customCtx = ctx as CustomContext;
 			const payload = ctx.callback?.payload || '';
 			
-			// Обработка выбора роли
-			if (payload.startsWith('role:')) {
-				const role = payload.split(':')[1];
-				
-				if (role === 'student') {
-					await this.handleStudent(customCtx);
-				} else if (role === 'deanery') {
-					await this.handleDeanery(customCtx);
-				}
-			}
-			
-			// Обработка авторизации
+			// Обработка отмены авторизации
 			if (payload.startsWith('auth:')) {
 				const action = payload.split(':')[1];
 				if (action === 'cancel') {
 					authStateManager.clear(customCtx.userId || 0);
-					await customCtx.reply(customCtx.t('welcome') + '\n\n' + customCtx.t('chooseRole'), {
-						attachments: [getStartKeyboard(customCtx) as any]
+					authStateManager.setState(customCtx.userId || 0, 'waiting_login');
+					await customCtx.reply(customCtx.t('welcome') + '\n\n' + customCtx.t('authRequired') + '\n\n' + customCtx.t('enterEmail'), {
+						attachments: [getAuthCancelKeyboard(customCtx) as any]
 					});
 				}
 			}
 			
+			// Обработка выхода
+			if (payload === 'logout') {
+				await this.handleLogout(customCtx);
+			}
+			
 			// Обработка возврата
 			if (payload === 'back:start') {
-				await customCtx.reply(customCtx.t('welcome') + '\n\n' + customCtx.t('chooseRole'), {
-					attachments: [getStartKeyboard(customCtx) as any]
-				});
+				// Проверяем авторизацию при возврате
+				if (customCtx.isAuthorized && customCtx.userRole) {
+					if (customCtx.userRole === 'student') {
+						await customCtx.reply(customCtx.t('welcome'), {
+							attachments: [getAuthorizedStudentKeyboard(customCtx) as any]
+						});
+					} else if (customCtx.userRole === 'deanery') {
+						await customCtx.reply(customCtx.t('welcome'), {
+							attachments: [getAuthorizedDeaneryKeyboard(customCtx) as any]
+						});
+					}
+				} else {
+					authStateManager.setState(customCtx.userId || 0, 'waiting_login');
+					await customCtx.reply(customCtx.t('welcome') + '\n\n' + customCtx.t('authRequired') + '\n\n' + customCtx.t('enterEmail'), {
+						attachments: [getAuthCancelKeyboard(customCtx) as any]
+					});
+				}
 			}
 		});
 		
@@ -68,45 +76,76 @@ export class CallbackHandler implements BotHandler {
 					attachments: [getAuthCancelKeyboard(customCtx) as any]
 				});
 			} else if (state === 'waiting_password') {
-				const login = authStateManager.getPendingLogin(userId);
-				if (login) {
-					await this.handleAuth(customCtx, login, text);
+				const emailOrLogin = authStateManager.getPendingLogin(userId);
+				if (emailOrLogin) {
+					await this.handleAuth(customCtx, emailOrLogin, text);
 					authStateManager.clear(userId);
 				}
 			}
 		});
 	}
 	
-	private async handleStudent(ctx: CustomContext) {
-		await ctx.reply(ctx.t('studentMenu'), {
-			attachments: [getStudentKeyboard(ctx) as any]
-		});
-	}
-	
-	private async handleDeanery(ctx: CustomContext) {
-		if (ctx.isAuthorized && ctx.userRole === 'deanery') {
-			await ctx.reply(ctx.t('alreadyAuthorized'));
-			return;
-		}
-		
-		authStateManager.setState(ctx.userId || 0, 'waiting_login');
-		await ctx.reply(ctx.t('authRequired') + '\n\n' + ctx.t('enterLogin'), {
-			attachments: [getAuthCancelKeyboard(ctx) as any]
-		});
-	}
-	
-	private async handleAuth(ctx: CustomContext, login: string, password: string) {
+	private async handleAuth(ctx: CustomContext, emailOrLogin: string, password: string) {
 		try {
-			const user = await this.authService.authenticateDeanery(login, password);
+			// Пытаемся авторизовать как сотрудника деканата
+			const user = await this.authService.authenticateDeanery(emailOrLogin, password);
 			
 			if (user) {
+				// Авторизация успешна - это сотрудник деканата
 				await this.authService.createSession(ctx.userId || 0, user.id, 'deanery');
-				await ctx.reply(ctx.t('authSuccess', { name: user.name }));
+				
+				// Обновляем контекст после создания сессии
+				ctx.isAuthorized = true;
+				ctx.userRole = 'deanery';
+				
+				await ctx.reply(ctx.t('authSuccess', { name: user.name }), {
+					attachments: [getAuthorizedDeaneryKeyboard(ctx) as any]
+				});
 			} else {
-				await ctx.reply(ctx.t('authFailed'));
+				// Если не сотрудник, пытаемся авторизовать как студента
+				// TODO: Добавить метод authenticateStudent в AuthService для проверки студентов через API
+				// Пока что для студентов создаем сессию (временное решение до добавления API для студентов)
+				// В будущем здесь должна быть проверка студента через API: 
+				// const student = await this.authService.authenticateStudent(emailOrLogin, password);
+				// if (student) { ... }
+				await this.authService.createStudentSession(ctx.userId || 0);
+				
+				// Обновляем контекст после создания сессии
+				ctx.isAuthorized = true;
+				ctx.userRole = 'student';
+				
+				await ctx.reply(ctx.t('authSuccess', { name: 'Студент' }), {
+					attachments: [getAuthorizedStudentKeyboard(ctx) as any]
+				});
 			}
 		} catch (error) {
 			console.error('Auth error:', error);
+			await ctx.reply(ctx.t('authFailed'));
+		}
+	}
+	
+	private async handleLogout(ctx: CustomContext) {
+		try {
+			const userId = ctx.userId;
+			if (!userId) return;
+			
+			// Очищаем сессию
+			await this.authService.clearSession(userId);
+			
+			// Очищаем состояние авторизации
+			authStateManager.clear(userId);
+			
+			// Обновляем контекст
+			ctx.isAuthorized = false;
+			ctx.userRole = null;
+			
+			// Предлагаем авторизацию
+			authStateManager.setState(userId, 'waiting_login');
+			await ctx.reply(ctx.t('logoutSuccess') + '\n\n' + ctx.t('authRequired') + '\n\n' + ctx.t('enterEmail'), {
+				attachments: [getAuthCancelKeyboard(ctx) as any]
+			});
+		} catch (error) {
+			console.error('Logout error:', error);
 			await ctx.reply(ctx.t('authError'));
 		}
 	}

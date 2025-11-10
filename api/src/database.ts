@@ -1,4 +1,4 @@
-import { Pool, PoolClient } from 'pg';
+import { Pool } from 'pg';
 
 let pool: Pool | null = null;
 
@@ -30,17 +30,7 @@ export function getPool(): Pool {
 	return pool;
 }
 
-export async function query<T = any>(text: string, params?: any[]): Promise<T[]> {
-	const result = await getPool().query(text, params);
-	return result.rows;
-}
-
-export async function queryOne<T = any>(text: string, params?: any[]): Promise<T | null> {
-	const rows = await query<T>(text, params);
-	return rows.length > 0 ? rows[0] : null;
-}
-
-// Инициализация таблиц (если нужно)
+// Инициализация таблиц
 export async function initTables() {
 	const pool = getPool();
 	
@@ -69,7 +59,6 @@ export async function initTables() {
 	`);
 	
 	// Удаляем ограничение NOT NULL для user_id, если оно существует (для поддержки студентов)
-	// Это делается через ALTER TABLE, но только если таблица уже существует
 	try {
 		await pool.query(`
 			ALTER TABLE auth_sessions 
