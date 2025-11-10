@@ -1,15 +1,11 @@
 import { Keyboard } from "@maxhub/max-bot-api";
+import { CustomContext } from '../types/context';
 
-// Простой пример inline-клавиатуры через raw attachment
-export const startKeyboard = Keyboard.inlineKeyboard([
-	// 1-я строка с 3-мя кнопками
-	[
-	  Keyboard.button.callback('default', 'color:default'),
-	  Keyboard.button.callback('positive', 'color:positive', { intent: 'positive' }),
-	  Keyboard.button.callback('negative', 'color:negative', { intent: 'negative' }),
-	], 
-	// 2-я строка с 1-й кнопкой
-	[Keyboard.button.link('Открыть Max', 'https://max.ru')],
-  ]);
-
-
+export function getStartKeyboard(ctx: CustomContext) {
+	return Keyboard.inlineKeyboard([
+		[
+			Keyboard.button.callback(ctx.t('student'), 'role:student'),
+			Keyboard.button.callback(ctx.t('deanery'), 'role:deanery'),
+		],
+	]);
+}
