@@ -1,7 +1,14 @@
+# Database
+POSTGRES_DB=bot_max
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=190340
 
-POSTGRES_DB=project_db
-POSTGRES_USER=project_user
-POSTGRES_PASSWORD=project_password
+# Redis
+REDIS_URL=redis://redis:6379
+
+# JWT Secret (измените в production!)
+JWT_SECRET=your-secret-key-change-in-production
+
+# MAX Bot
 MAX_BOT_TOKEN=your_max_bot_token_here
-WEBHOOK_URL= # optional; e.g. https://abcd-123-45-67-89.ngrok-free.app
-MAX_API_BASE=https://<actual-max-api-host>/v1 # required: set to real MAX API URL
+MAX_API_BASE=https://platform-api.max.ru
