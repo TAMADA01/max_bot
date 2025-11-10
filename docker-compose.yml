@@ -64,6 +64,7 @@ services:
       - API_URL=http://api:3000
       - MAX_BOT_TOKEN=${MAX_BOT_TOKEN}
       - WEBHOOK_URL=${WEBHOOK_URL}
+      - MAX_API_BASE=${MAX_API_BASE}
       - PORT=3002
     ports:
       - "3002:3002"
