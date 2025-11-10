@@ -23,4 +23,4 @@ USER node
 
 EXPOSE 3002
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/bot.js"]
