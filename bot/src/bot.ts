@@ -2,6 +2,8 @@ import { Bot } from '@maxhub/max-bot-api';
 import { registerCommands } from './commands';
 import { registerMiddlewares } from './middlewares';
 import { registerHandlers } from './handlers';
+import { setMyCommands } from './SetMyCommands';
+import { startDialogCommand } from './handlers/StartDialogHandler';
 
 const token = process.env.MAX_BOT_TOKEN || process.env.BOT_TOKEN;
 if (!token) {
@@ -11,6 +13,10 @@ if (!token) {
 
 // Экземпляр бота
 const bot = new Bot(token);
+
+startDialogCommand(bot)
+
+setMyCommands(bot);
 
 // Подключаем middleware
 registerMiddlewares(bot);
