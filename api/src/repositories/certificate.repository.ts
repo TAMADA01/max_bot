@@ -36,6 +36,16 @@ export class CertificateRepository {
 		return result.rows;
 	}
 
+	async findAll(limit: number = 100, offset: number = 0): Promise<Certificate[]> {
+		const result = await this.pool.query(
+			`SELECT * FROM certificates 
+			 ORDER BY created_at DESC 
+			 LIMIT $1 OFFSET $2`,
+			[limit, offset]
+		);
+		return result.rows;
+	}
+
 	async create(certificateData: {
 		student_id: number;
 		type: CertificateType;

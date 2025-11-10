@@ -109,5 +109,25 @@ export class UserRepository {
 		);
 		return result.rows[0] || null;
 	}
+
+	async findAll(limit: number = 100, offset: number = 0): Promise<(User | Student | Staff)[]> {
+		const result = await this.pool.query(
+			`SELECT 
+				u.*,
+				s.student_id, s.group_name, s.faculty, s.specialty, s.year_of_study,
+				st.position, st.department
+			 FROM users u
+			 LEFT JOIN students s ON u.id = s.id AND u.role = 'student'
+			 LEFT JOIN staff st ON u.id = st.id AND u.role IN ('staff', 'admin')
+			 ORDER BY u.created_at DESC
+			 LIMIT $1 OFFSET $2`,
+			[limit, offset]
+		);
+		return result.rows;
+	}
+
+	async deleteById(id: number): Promise<void> {
+		await this.pool.query('DELETE FROM users WHERE id = $1', [id]);
+	}
 }
 

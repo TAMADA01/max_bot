@@ -40,7 +40,7 @@ export class AuthController {
 					specialty: roleData.specialty,
 					year_of_study: roleData.year_of_study,
 				});
-			} else if (role === UserRole.STAFF && roleData.position) {
+			} else if ((role === UserRole.STAFF || role === UserRole.ADMIN) && roleData.position) {
 				await this.userRepository.createStaff(user.id, {
 					position: roleData.position,
 					department: roleData.department,

@@ -83,5 +83,9 @@ export class CertificateService {
 	async getStatistics() {
 		return await this.certificateRepository.getStatistics();
 	}
+
+	async getAllCertificates(limit: number = 100, offset: number = 0): Promise<Certificate[]> {
+		return await this.certificateRepository.findAll(limit, offset);
+	}
 }
 

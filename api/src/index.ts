@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { initPostgres, initRedis, closeConnections } from './config/database';
 import { runMigrations } from './database/migrations';
+import { initAdmin } from './database/init-admin';
 import routes from './routes';
 import { ErrorMiddleware } from './middleware/error.middleware';
 
@@ -22,6 +23,9 @@ app.get('/health', (req, res) => {
 	res.json({ status: 'OK', service: 'api', timestamp: new Date().toISOString() });
 });
 
+// Admin panel static files
+app.use('/admin', express.static('public/admin'));
+
 // API routes
 app.use('/api', routes);
 
@@ -37,6 +41,9 @@ async function start() {
 		
 		// Запуск миграций
 		await runMigrations();
+		
+		// Создание администратора по умолчанию
+		await initAdmin();
 		
 		// Запуск сервера
 		app.listen(PORT, () => {

@@ -15,8 +15,8 @@ export async function runMigrations() {
 			// В production файлы в dist
 			baseDir = path.join(__dirname, 'migrations');
 		} else {
-			// В development файлы в src (__dirname будет dist, нужно вернуться на уровень выше)
-			baseDir = path.join(__dirname, '..', 'database', 'migrations');
+			// В development файлы в src (__dirname будет dist/database, нужно вернуться в src)
+			baseDir = path.join(process.cwd(), 'src', 'database', 'migrations');
 		}
 		
 		const migrationPath = path.join(baseDir, '001_initial_schema.sql');

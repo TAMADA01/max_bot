@@ -138,5 +138,21 @@ export class CertificateController {
 			res.status(400).json({ error: error.message });
 		}
 	}
+
+	async getAll(req: Request, res: Response) {
+		try {
+			if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'staff')) {
+				return res.status(403).json({ error: 'Forbidden' });
+			}
+
+			const limit = parseInt(req.query.limit as string) || 100;
+			const offset = parseInt(req.query.offset as string) || 0;
+
+			const certificates = await this.certificateService.getAllCertificates(limit, offset);
+			res.json(certificates);
+		} catch (error: any) {
+			res.status(400).json({ error: error.message });
+		}
+	}
 }
 
