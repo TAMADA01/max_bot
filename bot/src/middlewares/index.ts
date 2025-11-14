@@ -7,7 +7,7 @@ import { AuthService } from '../services/authService';
 export function registerMiddlewares(bot: Bot, authService: AuthService) {
 	const middlewares: BotMiddleware[] = [
 		new LoggerMiddleware(),
-		new ContextMiddleware(authService),
+		new ContextMiddleware(),
 	];
 
 	middlewares.forEach((middleware) => middleware.register(bot));

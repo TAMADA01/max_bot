@@ -101,7 +101,7 @@ services:
     container_name: project_bot
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-project_user}:${POSTGRES_PASSWORD:-project_password}@postgres:5432/${POSTGRES_DB:-project_db}
-      - API_URL=http://api:3000
+      - API_URL=http://api:8080
       - MAX_BOT_TOKEN=${MAX_BOT_TOKEN}
       - WEBHOOK_URL=${WEBHOOK_URL}
       - MAX_API_BASE=${MAX_API_BASE}
