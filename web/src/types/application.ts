@@ -9,6 +9,12 @@ export interface Application {
     createdAt: string;
     updatedAt?: string;
     notes?: string;
+    certificateFile?: {
+        id: string;
+        name: string;
+        url: string;
+        uploadedAt: string;
+    };
 }
 
 export type ApplicationStatus = Application['status'];

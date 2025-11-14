@@ -1,42 +1,72 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import authRoutes from './routes/auth';
-import { initDatabase, initTables } from './database';
+import { initPostgres, initRedis, closeConnections } from './config/database';
+import { runMigrations } from './database/migrations';
+import { initAdmin } from './database/init-admin';
+import routes from './routes';
+import { ErrorMiddleware } from './middleware/error.middleware';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(helmet());
 app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
 
+// Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', service: 'api' });
+	res.json({ status: 'OK', service: 'api', timestamp: new Date().toISOString() });
 });
 
-app.get('/api/data', (req, res) => {
-  res.json({ message: 'Hello from API!', timestamp: new Date().toISOString() });
-});
+// Admin panel static files
+app.use('/admin', express.static('public/admin'));
 
-// Маршруты для авторизации
-app.use('/api/auth', authRoutes);
+// API routes
+app.use('/api', routes);
 
-// Инициализация базы данных
+// Error handling
+app.use(ErrorMiddleware.handle);
+
+// Инициализация
 async function start() {
 	try {
-		initDatabase();
-		await initTables();
+		// Подключение к БД
+		await initPostgres();
+		await initRedis();
 		
+		// Запуск миграций
+		await runMigrations();
+		
+		// Создание администратора по умолчанию
+		await initAdmin();
+		
+		// Запуск сервера
 		app.listen(PORT, () => {
-			console.log(`API server running on port ${PORT}`);
+			console.log(`✅ API server running on port ${PORT}`);
+			console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
 		});
 	} catch (error) {
-		console.error('❌ Failed to start API:', error);
+		console.error('❌ Failed to start server:', error);
 		process.exit(1);
 	}
 }
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+	console.log('SIGTERM received, shutting down gracefully...');
+	await closeConnections();
+	process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+	console.log('SIGINT received, shutting down gracefully...');
+	await closeConnections();
+	process.exit(0);
+});
 
 start();

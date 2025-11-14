@@ -1,20 +1,8 @@
 import React from 'react';
 import { Badge } from './ui/Badge';
 import { Application, ApplicationStatus } from '../types/application';
-import {
-    Users,
-    Calendar,
-    FileText,
-    MapPin,
-    Clock,
-    CheckCircle,
-    XCircle,
-    Package,
-} from 'lucide-react';
-
-interface ApplicationCardProps {
-    application: Application;
-}
+import {MapPin, Calendar, Package, XCircle, Clock, CheckCircle} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const statusConfig: Record<ApplicationStatus, {
     variant: 'default' | 'primary' | 'success' | 'warning' | 'error';
@@ -43,57 +31,66 @@ export const statusConfig: Record<ApplicationStatus, {
     }
 };
 
-const formatDate = (dateString: string) => {
+const formatCompactDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
         day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        month: 'short',
+        year: 'numeric'
     });
 };
 
+interface ApplicationCardProps {
+    application: Application;
+    onView?: (application: Application) => void;
+}
+
 export const ApplicationCard: React.FC<ApplicationCardProps> = ({
     application,
+    onView
 }) => {
+    const navigate = useNavigate();
     const status = statusConfig[application.status];
 
+    const handleView = () => {
+        if (onView) {
+            onView(application);
+        } else {
+            navigate(`/applications/${application.id}`);
+        }
+    };
+
     return (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{application.fullName}</h3>
-                <Badge variant={status.variant} icon={status.icon}>
-                    {status.label}
-                </Badge>
-            </div>
-
-            <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <span>Группа: <strong>{application.groupNumber}</strong></span>
-                </div>
-
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span>Год поступления: <strong>{application.admissionYear}</strong></span>
-                </div>
-
-                <div className="flex items-center gap-3 text-sm text-gray-600">
-                    <FileText className="w-4 h-4 text-gray-400" />
-                    <span>Количество экземпляров: <strong>{application.copiesCount}</strong></span>
-                </div>
-
-                <div className="flex items-start gap-3 text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                    <span>Место предоставления: <strong>{application.submissionPlace}</strong></span>
+        <div
+            className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => handleView()}
+        >
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            № {application.id}
+                        </span>
+                        <Badge variant={status.variant} icon={status.icon} size="sm">
+                            {status.label}
+                        </Badge>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 truncate">
+                        {application.fullName}
+                    </h3>
                 </div>
             </div>
 
+            <div className="space-y-2">
+                <div className="flex items-start gap-2 text-sm text-gray-600">
+                    <MapPin className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                    <span className="line-clamp-2">{application.submissionPlace}</span>
+                </div>
 
-            <div className="text-xs text-gray-500">
-                Создано: {formatDate(application.createdAt)}
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Calendar className="w-3 h-3 text-gray-400" />
+                    <span>{formatCompactDate(application.createdAt)}</span>
+                </div>
             </div>
-
         </div>
     );
 };
