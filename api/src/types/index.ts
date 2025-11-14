@@ -9,7 +9,9 @@ export enum UserRole {
 export enum CertificateStatus {
 	PENDING = 'pending',        // Ожидает обработки
 	IN_PROGRESS = 'in_progress', // В процессе оформления
+	APPROVED = 'approved',      // Одобрена (алиас для ready)
 	READY = 'ready',            // Готова к выдаче
+	COMPLETED = 'completed',    // Завершена с файлом (алиас для issued)
 	ISSUED = 'issued',          // Выдана
 	REJECTED = 'rejected',      // Отклонена
 }
@@ -61,6 +63,44 @@ export interface Certificate {
 	rejection_reason?: string;
 	created_at: Date;
 	updated_at: Date;
+	notes?: string;
+}
+
+export interface CertificateFile {
+	id: number;
+	certificate_id: number;
+	file_name: string;
+	file_path: string;
+	file_size: number;
+	mime_type: string;
+	uploaded_by: number;
+	uploaded_at: Date;
+	created_at: Date;
+	updated_at: Date;
+}
+
+export interface CertificateWithFile extends Certificate {
+	file?: CertificateFile;
+}
+
+// DTO для веб-приложения
+export interface ApplicationDTO {
+	id: string;
+	fullName: string;
+	groupNumber: string;
+	admissionYear: string;
+	copiesCount: string;
+	submissionPlace: string;
+	status: 'pending' | 'approved' | 'rejected' | 'completed';
+	createdAt: string;
+	updatedAt?: string;
+	notes?: string;
+	certificateFile?: {
+		id: string;
+		name: string;
+		url: string;
+		uploadedAt: string;
+	};
 }
 
 export interface AuthTokens {
