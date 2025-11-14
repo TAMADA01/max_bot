@@ -9,12 +9,15 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:alpine AS production
+FROM node:18-alpine AS production
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/dist ./dist
+COPY package*.json ./
+
+RUN npm ci --only=production
 
 EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["npx", "serve", "-s", "dist", "-l", "3000"]
