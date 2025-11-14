@@ -65,11 +65,11 @@ services:
       context: ./web
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://localhost:3001/api
+        - VITE_API_URL=http://localhost:8080/api
     container_name: project_web
     environment:
-      - API_URL=http://api:3000
-      - VITE_API_URL=http://localhost:3001/api
+      - API_URL=http://api:8080
+      - VITE_API_URL=http://localhost:8080/api
     ports:
       - "3000:3000"
     depends_on:
@@ -78,44 +78,44 @@ services:
       - project_network
     restart: unless-stopped
 
-  nginx:
-    image: nginx:alpine
-    container_name: project_nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl:/etc/nginx/ssl
-    depends_on:
-      - web
-      - api
-    networks:
-      - project_network
-    restart: unless-stopped
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: project_nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #     - ./nginx/ssl:/etc/nginx/ssl
+  #   depends_on:
+  #     - web
+  #     - api
+  #   networks:
+  #     - project_network
+  #   restart: unless-stopped
 
-  bot:
-    build:
-      context: ./bot
-      dockerfile: Dockerfile
-    container_name: project_bot
-    environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-project_user}:${POSTGRES_PASSWORD:-project_password}@postgres:5432/${POSTGRES_DB:-project_db}
-      - API_URL=http://api:3000
-      - MAX_BOT_TOKEN=${MAX_BOT_TOKEN}
-      - WEBHOOK_URL=${WEBHOOK_URL}
-      - MAX_API_BASE=${MAX_API_BASE}
-      - PORT=3002
-    ports:
-      - "3002:3002"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      api:
-        condition: service_started
-    networks:
-      - project_network
-    restart: unless-stopped
+  # bot:
+  #   build:
+  #     context: ./bot
+  #     dockerfile: Dockerfile
+  #   container_name: project_bot
+  #   environment:
+  #     - DATABASE_URL=postgresql://${POSTGRES_USER:-project_user}:${POSTGRES_PASSWORD:-project_password}@postgres:5432/${POSTGRES_DB:-project_db}
+  #     - API_URL=http://api:3000
+  #     - MAX_BOT_TOKEN=${MAX_BOT_TOKEN}
+  #     - WEBHOOK_URL=${WEBHOOK_URL}
+  #     - MAX_API_BASE=${MAX_API_BASE}
+  #     - PORT=3002
+  #   ports:
+  #     - "3002:3002"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     api:
+  #       condition: service_started
+  #   networks:
+  #     - project_network
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:

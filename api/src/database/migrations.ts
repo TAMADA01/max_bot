@@ -6,7 +6,7 @@ export async function runMigrations() {
 	const pool = getPostgresPool();
 	
 	try {
-		// Читаем файл миграции
+		// Читаем файлы миграций
 		// В production используем dist, в dev - src
 		const isProduction = process.env.NODE_ENV === 'production';
 		let baseDir: string;
@@ -19,26 +19,40 @@ export async function runMigrations() {
 			baseDir = path.join(process.cwd(), 'src', 'database', 'migrations');
 		}
 		
-		const migrationPath = path.join(baseDir, '001_initial_schema.sql');
+		// Список миграций в порядке выполнения
+		const migrations = [
+			'001_initial_schema.sql',
+			'002_add_certificate_files.sql'
+		];
 		
-		console.log(`🔍 Looking for migration at: ${migrationPath}`);
+		console.log(`🔍 Looking for migrations in: ${baseDir}`);
 		
-		if (!fs.existsSync(migrationPath)) {
-			console.warn(`⚠️  Migration file not found at ${migrationPath}, skipping migrations`);
-			return;
+		for (const migrationFile of migrations) {
+			const migrationPath = path.join(baseDir, migrationFile);
+			
+			if (!fs.existsSync(migrationPath)) {
+				console.warn(`⚠️  Migration file not found at ${migrationPath}, skipping`);
+				continue;
+			}
+			
+			const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
+			
+			try {
+				// Выполняем миграцию
+				await pool.query(migrationSQL);
+				console.log(`✅ Migration ${migrationFile} completed`);
+			} catch (error: any) {
+				// Игнорируем ошибки, если таблицы/колонки уже существуют
+				if (error.message && (error.message.includes('already exists') || error.message.includes('duplicate'))) {
+					console.log(`ℹ️  Migration ${migrationFile} already applied, skipping`);
+					continue;
+				}
+				throw error;
+			}
 		}
 		
-		const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
-		
-		// Выполняем миграцию
-		await pool.query(migrationSQL);
-		console.log('✅ Database migrations completed');
+		console.log('✅ All database migrations completed');
 	} catch (error: any) {
-		// Игнорируем ошибки, если таблицы уже существуют
-		if (error.message && error.message.includes('already exists')) {
-			console.log('ℹ️  Database tables already exist, skipping migrations');
-			return;
-		}
 		console.error('❌ Migration error:', error);
 		throw error;
 	}

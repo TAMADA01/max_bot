@@ -42,10 +42,11 @@ CREATE TABLE IF NOT EXISTS certificates (
 	student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
 	staff_id INTEGER REFERENCES staff(id) ON DELETE SET NULL,
 	type VARCHAR(50) NOT NULL CHECK (type IN ('enrollment', 'academic', 'attendance', 'graduation', 'other')),
-	status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'ready', 'issued', 'rejected')),
+	status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'ready', 'issued', 'rejected', 'approved', 'completed')),
 	request_data JSONB NOT NULL DEFAULT '{}',
 	issued_at TIMESTAMP,
 	rejection_reason TEXT,
+	notes TEXT,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
