@@ -5,10 +5,10 @@ import { CustomContext } from '../types/context';
 export function getAuthorizedStudentKeyboard(ctx: CustomContext) {
 	return Keyboard.inlineKeyboard([
 		[
-			Keyboard.button.link(ctx.t('activeApplications'), 'https://dev.max.ru/')
+			Keyboard.button.link(ctx.t('activeApplications'), 'https://max.ru/t411_hakaton_bot?startapp=applications')
 		],
 		[
-			Keyboard.button.link(ctx.t('createApplication'), 'https://dev.max.ru/')
+			Keyboard.button.link(ctx.t('createApplication'), 'https://max.ru/t411_hakaton_bot?startapp=applications/create')
 		],
 		[
 			Keyboard.button.callback(ctx.t('logout'), 'logout')

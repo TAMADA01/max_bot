@@ -45,6 +45,21 @@ export class AuthService {
 			throw error;
 		}
 	}
+
+	async authenticateStudent(email: string, password: string): Promise<{ id: number; email: string; role: string; first_name: string; last_name: string } | null> {
+		try {
+			const response = await this.apiClient.post<{ user: { id: number; email: string; role: string; first_name: string; last_name: string } }>('/api/auth/login', {
+				email,
+				password,
+			});
+			return response.user;
+		} catch (error: any) {
+			if (error.status === 401) {
+				return null;
+			}
+			throw error;
+		}
+	}
 	
 	async createSession(maxUserId: number, userId: number | null, role: string): Promise<void> {
 		await this.apiClient.post<SessionResponse>('/api/auth/sessions', {

@@ -94,28 +94,28 @@ services:
   #     - project_network
   #   restart: unless-stopped
 
-  # bot:
-  #   build:
-  #     context: ./bot
-  #     dockerfile: Dockerfile
-  #   container_name: project_bot
-  #   environment:
-  #     - DATABASE_URL=postgresql://${POSTGRES_USER:-project_user}:${POSTGRES_PASSWORD:-project_password}@postgres:5432/${POSTGRES_DB:-project_db}
-  #     - API_URL=http://api:3000
-  #     - MAX_BOT_TOKEN=${MAX_BOT_TOKEN}
-  #     - WEBHOOK_URL=${WEBHOOK_URL}
-  #     - MAX_API_BASE=${MAX_API_BASE}
-  #     - PORT=3002
-  #   ports:
-  #     - "3002:3002"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     api:
-  #       condition: service_started
-  #   networks:
-  #     - project_network
-  #   restart: unless-stopped
+  bot:
+    build:
+      context: ./bot
+      dockerfile: Dockerfile
+    container_name: project_bot
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-project_user}:${POSTGRES_PASSWORD:-project_password}@postgres:5432/${POSTGRES_DB:-project_db}
+      - API_URL=http://api:3000
+      - MAX_BOT_TOKEN=${MAX_BOT_TOKEN}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - MAX_API_BASE=${MAX_API_BASE}
+      - PORT=3002
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - project_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
