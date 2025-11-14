@@ -19,6 +19,11 @@ app.use(morgan('combined'));
 app.use(express.json());
 
 // Health check
+app.get('/api', (req, res) => {
+	res.json({ status: 'OK', service: 'wdaawdawd', timestamp: new Date().toISOString() });
+});
+
+// Health check
 app.get('/health', (req, res) => {
 	res.json({ status: 'OK', service: 'api', timestamp: new Date().toISOString() });
 });
