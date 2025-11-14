@@ -1,14 +1,17 @@
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import './App.css';
 import ApplicationsPage from './pages/ApplicationsPage';
-import ApplicationFormPage from "./pages/ApplicationFormPage.tsx";
-import NotFoundPage from "./pages/NotFoundPage.tsx";
-import ApplicationDetailsPage from "./pages/ApplicationDetailsPage.tsx";
+import ApplicationFormPage from "./pages/ApplicationFormPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import ApplicationDetailsPage from "./pages/ApplicationDetailsPage";
 
+import MaxRedirectHandler from "./MaxRedirectHandler";
 
 function App() {
     return (
         <Router>
+            <MaxRedirectHandler />
+
             <div className="App">
                 <Routes>
                     {/* Страница со списком заявок */}
