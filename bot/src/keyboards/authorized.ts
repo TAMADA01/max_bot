@@ -8,7 +8,7 @@ export function getAuthorizedStudentKeyboard(ctx: CustomContext) {
 			Keyboard.button.link(ctx.t('activeApplications'), 'https://max.ru/t411_hakaton_bot?startapp=applications')
 		],
 		[
-			Keyboard.button.link(ctx.t('createApplication'), 'https://max.ru/t411_hakaton_bot?startapp=applications/create')
+			Keyboard.button.link(ctx.t('createApplication'), 'https://max.ru/t411_hakaton_bot?startapp=create_application')
 		],
 		[
 			Keyboard.button.callback(ctx.t('logout'), 'logout')

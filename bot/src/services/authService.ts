@@ -31,22 +31,7 @@ export class AuthService {
 		this.apiClient = apiClient || new ApiClient();
 	}
 
-	async authenticateDeanery(login: string, password: string): Promise<DeaneryUser | null> {
-		try {
-			const response = await this.apiClient.post<AuthenticateResponse>('/api/auth/authenticate', {
-				login,
-				password,
-			});
-			return response.user;
-		} catch (error: any) {
-			if (error.status === 401) {
-				return null;
-			}
-			throw error;
-		}
-	}
-
-	async authenticateStudent(email: string, password: string): Promise<{ id: number; email: string; role: string; first_name: string; last_name: string } | null> {
+	async authenticate(email: string, password: string): Promise<{ id: number; email: string; role: string; first_name: string; last_name: string } | null> {
 		try {
 			const response = await this.apiClient.post<{ user: { id: number; email: string; role: string; first_name: string; last_name: string } }>('/api/auth/login', {
 				email,

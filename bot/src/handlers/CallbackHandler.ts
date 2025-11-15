@@ -95,52 +95,45 @@ export class CallbackHandler implements BotHandler {
 		});
 	}
 	
-	private async handleAuth(ctx: CustomContext, emailOrLogin: string, password: string) {
+	private async handleAuth(ctx: CustomContext, email: string, password: string) {
 		const userId = ctx.userId || 0;
 		
 		try {
-			// Пытаемся авторизовать как сотрудника деканата
-			const deaneryUser = await this.authService.authenticateDeanery(emailOrLogin, password);
+			// Авторизация через API
+			const user = await this.authService.authenticate(email, password);
 			
-			if (deaneryUser) {
-				// Авторизация успешна - это сотрудник деканата
-				await this.authService.createSession(userId, deaneryUser.id, 'deanery');
+			if (user) {
+				// Авторизация успешна
+				// Определяем роль пользователя из ответа API
+				const role = user.role === 'staff' || user.role === 'admin' ? 'deanery' : 'student';
 				
-				// Обновляем контекст после создания сессии
+				// Сохраняем информацию об авторизации в памяти
+				authStateManager.setAuthorized(userId, role);
+				
+				// Обновляем контекст
 				ctx.isAuthorized = true;
-				ctx.userRole = 'deanery';
+				ctx.userRole = role;
 				
-				// Очищаем состояние авторизации
-				authStateManager.clear(userId);
+				// Очищаем состояние авторизации (waiting_login/waiting_password)
+				authStateManager.setState(userId, null);
 				
-				await ctx.reply(ctx.t('authSuccess', { name: deaneryUser.name }), {
-					attachments: [getAuthorizedDeaneryKeyboard(ctx) as any]
-				});
+				// Формируем имя пользователя
+				const userName = `${user.first_name} ${user.last_name}`.trim() || (role === 'deanery' ? 'Сотрудник' : 'Студент');
+				
+				// Показываем соответствующую клавиатуру в зависимости от роли
+				if (role === 'deanery') {
+					await ctx.reply(ctx.t('authSuccess', { name: userName }), {
+						attachments: [getAuthorizedDeaneryKeyboard(ctx) as any]
+					});
+				} else {
+					await ctx.reply(ctx.t('authSuccess', { name: userName }), {
+						attachments: [getAuthorizedStudentKeyboard(ctx) as any]
+					});
+				}
 				return;
 			}
 			
-			// Если не сотрудник деканата, пытаемся авторизовать как студента
-			const studentUser = await this.authService.authenticateStudent(emailOrLogin, password);
-			
-			if (studentUser) {
-				// Авторизация успешна - это студент
-				await this.authService.createSession(userId, studentUser.id, 'student');
-				
-				// Обновляем контекст после создания сессии
-				ctx.isAuthorized = true;
-				ctx.userRole = 'student';
-				
-				// Очищаем состояние авторизации
-				authStateManager.clear(userId);
-				
-				const studentName = `${studentUser.first_name} ${studentUser.last_name}`.trim() || 'Студент';
-				await ctx.reply(ctx.t('authSuccess', { name: studentName }), {
-					attachments: [getAuthorizedStudentKeyboard(ctx) as any]
-				});
-				return;
-			}
-			
-			// Если ни деканат, ни студент - просим повторить ввод email
+			// Если авторизация не удалась - просим повторить ввод email
 			authStateManager.setState(userId, 'waiting_login');
 			await ctx.reply(ctx.t('authFailed') + '\n\n' + ctx.t('Введите Email'), {
 				attachments: [getAuthCancelKeyboard(ctx) as any]
@@ -160,10 +153,7 @@ export class CallbackHandler implements BotHandler {
 			const userId = ctx.userId;
 			if (!userId) return;
 			
-			// Очищаем сессию
-			await this.authService.clearSession(userId);
-			
-			// Очищаем состояние авторизации
+			// Очищаем информацию об авторизации
 			authStateManager.clear(userId);
 			
 			// Обновляем контекст
