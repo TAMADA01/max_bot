@@ -1,9 +1,17 @@
 // Управление состояниями авторизации пользователей
+import { UserRole } from '../types/context';
+
 export type AuthState = 'waiting_login' | 'waiting_password' | null;
+
+interface AuthInfo {
+	userId: number;
+	role: UserRole;
+}
 
 class AuthStateManager {
 	private states = new Map<number, AuthState>();
 	private pendingLogins = new Map<number, string>();
+	private authorizedUsers = new Map<number, AuthInfo>();
 
 	setState(userId: number, state: AuthState) {
 		if (state === null) {
@@ -30,9 +38,18 @@ class AuthStateManager {
 		return this.pendingLogins.get(userId);
 	}
 
+	setAuthorized(userId: number, role: UserRole) {
+		this.authorizedUsers.set(userId, { userId, role });
+	}
+
+	getAuthorized(userId: number): AuthInfo | null {
+		return this.authorizedUsers.get(userId) || null;
+	}
+
 	clear(userId: number) {
 		this.states.delete(userId);
 		this.pendingLogins.delete(userId);
+		this.authorizedUsers.delete(userId);
 	}
 }
 

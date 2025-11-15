@@ -119,7 +119,7 @@ export async function initTables() {
 	await pool.query(`
 		CREATE TABLE IF NOT EXISTS auth_sessions (
 			id SERIAL PRIMARY KEY,
-			user_id INTEGER NOT NULL,
+			user_id INTEGER,
 			max_user_id BIGINT NOT NULL,
 			role VARCHAR(50) NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -127,6 +127,20 @@ export async function initTables() {
 			FOREIGN KEY (user_id) REFERENCES deanery_users(id) ON DELETE CASCADE
 		)
 	`);
+	
+	// Удаляем ограничение NOT NULL для user_id, если оно существует (для поддержки студентов)
+	// Это делается через ALTER TABLE, но только если таблица уже существует
+	try {
+		await pool.query(`
+			ALTER TABLE auth_sessions 
+			ALTER COLUMN user_id DROP NOT NULL
+		`);
+	} catch (error: any) {
+		// Игнорируем ошибку, если колонка уже nullable или таблица только что создана
+		if (!error.message.includes('does not exist') && !error.message.includes('column "user_id" is not null')) {
+			console.warn('Warning: Could not alter user_id column:', error.message);
+		}
+	}
 	
 	console.log('✅ Database tables initialized');
 }

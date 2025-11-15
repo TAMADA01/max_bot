@@ -3,8 +3,8 @@ import { registerCommands } from './commands';
 import { registerMiddlewares } from './middlewares';
 import { registerHandlers } from './handlers';
 import { setMyCommands } from './SetMyCommands';
-import { initDatabase, initTables } from './services/database';
 import { AuthService } from './services/authService';
+import { ApiClient } from './services/apiClient';
 
 const token: string = process.env.MAX_BOT_TOKEN || process.env.BOT_TOKEN || '';
 if (!token) {
@@ -12,19 +12,19 @@ if (!token) {
 	process.exit(1);
 }
 
-// Инициализация базы данных
+// Инициализация бота
 async function start() {
 	try {
-		await initDatabase();
-		await initTables();
+		// Создаем API клиент
+		const apiClient = new ApiClient();
 		
 		// Создаем сервисы
-		const authService = new AuthService();
+		const authService = new AuthService(apiClient);
 		
 		// Экземпляр бота
 		const bot = new Bot(token);
 
-    setMyCommands(bot);
+		setMyCommands(bot);
 		
 		// Подключаем middleware (должен быть первым для расширения контекста)
 		registerMiddlewares(bot, authService);

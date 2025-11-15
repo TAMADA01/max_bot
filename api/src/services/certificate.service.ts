@@ -124,7 +124,7 @@ export class CertificateService {
 		}
 
 		const requestData = certificate.request_data as any;
-		const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+		const baseUrl = process.env.API_BASE_URL || 'http://localhost:8080';
 
 		return {
 			id: certificate.id.toString(),
