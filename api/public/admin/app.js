@@ -1,5 +1,8 @@
 // API Base URL - админка на /admin, API на /api
-const API_BASE = '/api';
+// Проверяем, запущена ли админка на том же хосте, что и API
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? `${window.location.protocol}//${window.location.hostname}:8080/api`
+    : '/api';
 
 // State
 let currentUser = null;
@@ -60,7 +63,12 @@ function setupEventListeners() {
     
     // Create user modal
     document.getElementById('create-user-btn').addEventListener('click', () => {
-        document.getElementById('create-user-modal').classList.add('show');
+        const modal = document.getElementById('create-user-modal');
+        modal.classList.add('show');
+        // Сбрасываем форму и скрываем все поля при открытии
+        document.getElementById('create-user-form').reset();
+        document.getElementById('student-fields').style.display = 'none';
+        document.getElementById('staff-fields').style.display = 'none';
     });
     
     document.getElementById('create-user-form').addEventListener('submit', handleCreateUser);
@@ -126,24 +134,41 @@ async function apiCall(endpoint, options = {}) {
 
     try {
         const response = await fetch(url, config);
-        const data = await response.json();
-
-        if (response.status === 401 && accessToken) {
-            // Try to refresh token
-            await refreshAccessToken();
-            // Retry request
-            config.headers['Authorization'] = `Bearer ${accessToken}`;
-            const retryResponse = await fetch(url, config);
-            return await retryResponse.json();
-        }
-
+        
+        // Проверяем, что ответ пришел
         if (!response.ok) {
-            throw new Error(data.error || 'Request failed');
+            let errorMessage = 'Request failed';
+            try {
+                const data = await response.json();
+                errorMessage = data.error || data.message || errorMessage;
+            } catch (e) {
+                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+
+            if (response.status === 401 && accessToken) {
+                // Try to refresh token
+                const refreshed = await refreshAccessToken();
+                if (refreshed) {
+                    // Retry request
+                    config.headers['Authorization'] = `Bearer ${accessToken}`;
+                    const retryResponse = await fetch(url, config);
+                    if (!retryResponse.ok) {
+                        throw new Error(errorMessage);
+                    }
+                    return await retryResponse.json();
+                }
+            }
+
+            throw new Error(errorMessage);
         }
 
-        return data;
+        return await response.json();
     } catch (error) {
         console.error('API call error:', error);
+        // Проверяем, является ли это сетевой ошибкой
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+            throw new Error('Ошибка подключения к серверу. Убедитесь, что API запущен.');
+        }
         throw error;
     }
 }
@@ -151,7 +176,7 @@ async function apiCall(endpoint, options = {}) {
 async function refreshAccessToken() {
     if (!refreshToken) {
         handleLogout();
-        return;
+        return false;
     }
 
     try {
@@ -163,16 +188,23 @@ async function refreshAccessToken() {
 
         const data = await response.json();
 
-        if (response.ok && data.tokens) {
-            accessToken = data.tokens.access_token;
-            refreshToken = data.tokens.refresh_token;
+        if (response.ok && data.access_token) {
+            accessToken = data.access_token;
+            // Обновляем refresh token, если сервер прислал новый
+            if (data.refresh_token) {
+                refreshToken = data.refresh_token;
+                localStorage.setItem('refreshToken', refreshToken);
+            }
             localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', refreshToken);
+            return true;
         } else {
             handleLogout();
+            return false;
         }
     } catch (error) {
+        console.error('Token refresh error:', error);
         handleLogout();
+        return false;
     }
 }
 
@@ -182,9 +214,14 @@ async function handleLogin(e) {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('login-error');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
 
     errorDiv.classList.remove('show');
     errorDiv.textContent = '';
+    
+    // Показываем индикатор загрузки
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
 
     try {
         const data = await apiCall('/auth/login', {
@@ -205,6 +242,9 @@ async function handleLogin(e) {
     } catch (error) {
         errorDiv.textContent = error.message || 'Ошибка входа';
         errorDiv.classList.add('show');
+    } finally {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
     }
 }
 
@@ -276,16 +316,22 @@ async function loadCertificates() {
                 rejected: 'Отклонена',
             };
 
+            const certType = escapeHtml(cert.type || 'Не указан');
+            const certDate = formatDate(cert.created_at);
+            const statusLabel = escapeHtml(statusLabels[cert.status] || cert.status);
+
             return `
                 <div class="certificate-item">
                     <div class="certificate-info">
                         <div class="certificate-header">
-                            <span class="badge ${statusClass}">${statusLabels[cert.status] || cert.status}</span>
+                            <span class="badge ${statusClass}">${statusLabel}</span>
                             <span>Справка #${cert.id}</span>
                         </div>
                         <div class="certificate-details">
-                            Тип: ${cert.type || 'Не указан'} | 
-                            Создана: ${new Date(cert.created_at).toLocaleDateString('ru-RU')}
+                            Тип: ${certType} | 
+                            Создана: ${certDate}
+                            ${cert.user_id ? `<br>Пользователь ID: ${cert.user_id}` : ''}
+                            ${cert.rejection_reason ? `<br><span style="color: #dc2626;">Причина отклонения: ${escapeHtml(cert.rejection_reason)}</span>` : ''}
                         </div>
                     </div>
                     ${currentUser && (currentUser.role === 'staff' || currentUser.role === 'admin') ? `
@@ -294,6 +340,9 @@ async function loadCertificates() {
                                 <button class="btn btn-primary" onclick="assignCertificate(${cert.id})">Назначить себе</button>
                             ` : ''}
                             ${cert.status === 'in_progress' ? `
+                                <button class="btn btn-primary" onclick="openStatusModal(${cert.id})">Изменить статус</button>
+                            ` : ''}
+                            ${cert.status === 'ready' ? `
                                 <button class="btn btn-primary" onclick="openStatusModal(${cert.id})">Изменить статус</button>
                             ` : ''}
                         </div>
@@ -308,11 +357,16 @@ async function loadCertificates() {
 
 // Assign certificate
 async function assignCertificate(certId) {
+    if (!confirm('Назначить эту справку себе?')) {
+        return;
+    }
+    
     try {
         await apiCall(`/certificates/${certId}/assign`, {
             method: 'POST',
         });
         loadCertificates();
+        loadDashboard(); // Обновляем статистику
     } catch (error) {
         alert('Ошибка: ' + error.message);
     }
@@ -335,6 +389,16 @@ async function handleStatusChange(e) {
     e.preventDefault();
     const status = document.getElementById('status-select').value;
     const rejectionReason = document.getElementById('rejection-reason').value;
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+
+    // Проверка причины отклонения
+    if (status === 'rejected' && !rejectionReason.trim()) {
+        alert('Укажите причину отклонения');
+        return;
+    }
+
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
 
     try {
         await apiCall(`/certificates/${currentCertificateId}/status`, {
@@ -350,6 +414,9 @@ async function handleStatusChange(e) {
         loadDashboard();
     } catch (error) {
         alert('Ошибка: ' + error.message);
+    } finally {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
     }
 }
 
@@ -373,20 +440,28 @@ async function loadUsers() {
                 admin: 'Администратор',
             };
 
+            const firstName = escapeHtml(user.first_name);
+            const lastName = escapeHtml(user.last_name);
+            const middleName = escapeHtml(user.middle_name || '');
+            const email = escapeHtml(user.email);
+            const roleLabel = escapeHtml(roleLabels[user.role] || user.role);
+
             let additionalInfo = '';
             if (user.role === 'student') {
                 additionalInfo = `
                     <div class="user-details">
-                        <span>Студ. билет: ${user.student_id || 'не указан'}</span>
-                        ${user.group_name ? `<span>Группа: ${user.group_name}</span>` : ''}
-                        ${user.faculty ? `<span>Факультет: ${user.faculty}</span>` : ''}
+                        <span>Студ. билет: ${escapeHtml(user.student_id || 'не указан')}</span>
+                        ${user.group_name ? `<span>Группа: ${escapeHtml(user.group_name)}</span>` : ''}
+                        ${user.faculty ? `<span>Факультет: ${escapeHtml(user.faculty)}</span>` : ''}
+                        ${user.specialty ? `<span>Специальность: ${escapeHtml(user.specialty)}</span>` : ''}
+                        ${user.year_of_study ? `<span>Курс: ${user.year_of_study}</span>` : ''}
                     </div>
                 `;
             } else if (user.role === 'staff' || user.role === 'admin') {
                 additionalInfo = `
                     <div class="user-details">
-                        <span>Должность: ${user.position || 'не указана'}</span>
-                        ${user.department ? `<span>Отдел: ${user.department}</span>` : ''}
+                        <span>Должность: ${escapeHtml(user.position || 'не указана')}</span>
+                        ${user.department ? `<span>Отдел: ${escapeHtml(user.department)}</span>` : ''}
                     </div>
                 `;
             }
@@ -394,12 +469,12 @@ async function loadUsers() {
             return `
                 <div class="user-item">
                     <div class="user-info-item">
-                        <div class="user-name">${user.first_name} ${user.last_name} ${user.middle_name || ''}</div>
-                        <div class="user-email">${user.email}</div>
+                        <div class="user-name">${firstName} ${lastName} ${middleName}</div>
+                        <div class="user-email">${email}</div>
                         ${additionalInfo}
                     </div>
                     <div class="user-actions">
-                        <span class="user-role">${roleLabels[user.role] || user.role}</span>
+                        <span class="user-role">${roleLabel}</span>
                         ${user.id !== currentUser.id ? `
                             <button class="btn btn-secondary" onclick="deleteUser(${user.id})" style="margin-left: 10px; padding: 5px 10px; font-size: 12px;">Удалить</button>
                         ` : ''}
@@ -430,31 +505,58 @@ async function deleteUser(userId) {
 
 // Toggle role fields
 function toggleRoleFields() {
-    const role = document.getElementById('user-role').value;
+    const roleSelect = document.getElementById('user-role');
+    if (!roleSelect) return;
+    
+    const role = roleSelect.value;
     const studentFields = document.getElementById('student-fields');
     const staffFields = document.getElementById('staff-fields');
     
     if (role === 'student') {
         studentFields.style.display = 'block';
         staffFields.style.display = 'none';
+        // Обязательные поля для студента
         document.getElementById('user-student-id').required = true;
+        document.getElementById('user-group-name').required = true;
+        document.getElementById('user-faculty').required = true;
+        // Необязательные поля для сотрудника
         document.getElementById('user-position').required = false;
-    } else if (role === 'staff' || role === 'admin') {
+        document.getElementById('user-department').required = false;
+    } else if (role === 'staff') {
         studentFields.style.display = 'none';
         staffFields.style.display = 'block';
-        document.getElementById('user-student-id').required = false;
+        // Обязательные поля для сотрудника
         document.getElementById('user-position').required = true;
+        document.getElementById('user-department').required = true;
+        // Необязательные поля для студента
+        document.getElementById('user-student-id').required = false;
+        document.getElementById('user-group-name').required = false;
+        document.getElementById('user-faculty').required = false;
     } else {
+        // Роль не выбрана
         studentFields.style.display = 'none';
         staffFields.style.display = 'none';
+        document.getElementById('user-student-id').required = false;
+        document.getElementById('user-group-name').required = false;
+        document.getElementById('user-faculty').required = false;
+        document.getElementById('user-position').required = false;
+        document.getElementById('user-department').required = false;
     }
 }
 
 // Create user
 async function handleCreateUser(e) {
     e.preventDefault();
+    const submitBtn = e.target.querySelector('button[type="submit"]');
     
     const role = document.getElementById('user-role').value;
+    
+    // Проверка выбора роли
+    if (!role) {
+        alert('Выберите роль пользователя');
+        return;
+    }
+    
     const formData = {
         email: document.getElementById('user-email').value,
         password: document.getElementById('user-password').value,
@@ -468,27 +570,40 @@ async function handleCreateUser(e) {
     // Добавляем поля в зависимости от роли
     if (role === 'student') {
         const studentId = document.getElementById('user-student-id').value;
-        if (!studentId) {
-            alert('Номер студенческого билета обязателен для студентов');
+        const groupName = document.getElementById('user-group-name').value;
+        const faculty = document.getElementById('user-faculty').value;
+        
+        // Валидация обязательных полей
+        if (!studentId || !groupName || !faculty) {
+            alert('Заполните все обязательные поля для студента:\n- Номер студенческого билета\n- Номер группы\n- Факультет');
             return;
         }
+        
         formData.student_id = studentId;
-        formData.group_name = document.getElementById('user-group-name').value || undefined;
-        formData.faculty = document.getElementById('user-faculty').value || undefined;
+        formData.group_name = groupName;
+        formData.faculty = faculty;
         formData.specialty = document.getElementById('user-specialty').value || undefined;
+        
         const yearOfStudy = document.getElementById('user-year-of-study').value;
         if (yearOfStudy) {
             formData.year_of_study = parseInt(yearOfStudy);
         }
-    } else if (role === 'staff' || role === 'admin') {
+    } else if (role === 'staff') {
         const position = document.getElementById('user-position').value;
-        if (!position) {
-            alert('Должность обязательна для сотрудников и администраторов');
+        const department = document.getElementById('user-department').value;
+        
+        // Валидация обязательных полей
+        if (!position || !department) {
+            alert('Заполните все обязательные поля для сотрудника:\n- Должность\n- Кафедра');
             return;
         }
+        
         formData.position = position;
-        formData.department = document.getElementById('user-department').value || undefined;
+        formData.department = department;
     }
+
+    submitBtn.classList.add('loading');
+    submitBtn.disabled = true;
 
     try {
         await apiCall('/users', {
@@ -503,6 +618,38 @@ async function handleCreateUser(e) {
         alert('Пользователь успешно создан!');
     } catch (error) {
         alert('Ошибка: ' + error.message);
+    } finally {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+    }
+}
+
+// Utility function to escape HTML and prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// Format date helper
+function formatDate(dateString) {
+    if (!dateString) return 'Не указана';
+    try {
+        return new Date(dateString).toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        return dateString;
     }
 }
 

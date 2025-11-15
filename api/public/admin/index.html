@@ -138,6 +138,7 @@
                 <div class="form-group">
                     <label for="user-role">Роль</label>
                     <select id="user-role" name="role" required onchange="toggleRoleFields()">
+                        <option value="" disabled selected>Выберите роль</option>
                         <option value="student">Студент</option>
                         <option value="staff">Сотрудник</option>
                         <option value="admin">Администратор</option>
@@ -162,37 +163,39 @@
                 
                 <!-- Поля для студента -->
                 <div id="student-fields" style="display: none;">
+                    <h4 style="margin: 15px 0 10px 0; color: #2563eb; font-size: 16px;">Информация о студенте</h4>
                     <div class="form-group">
                         <label for="user-student-id">Номер студенческого билета *</label>
-                        <input type="text" id="user-student-id" name="student_id">
+                        <input type="text" id="user-student-id" name="student_id" placeholder="Например: 20210001">
                     </div>
                     <div class="form-group">
-                        <label for="user-group-name">Группа</label>
-                        <input type="text" id="user-group-name" name="group_name">
+                        <label for="user-group-name">Номер группы *</label>
+                        <input type="text" id="user-group-name" name="group_name" placeholder="Например: ИВТ-201">
                     </div>
                     <div class="form-group">
-                        <label for="user-faculty">Факультет</label>
-                        <input type="text" id="user-faculty" name="faculty">
+                        <label for="user-faculty">Факультет *</label>
+                        <input type="text" id="user-faculty" name="faculty" placeholder="Например: Информационных технологий">
                     </div>
                     <div class="form-group">
                         <label for="user-specialty">Специальность</label>
-                        <input type="text" id="user-specialty" name="specialty">
+                        <input type="text" id="user-specialty" name="specialty" placeholder="Например: Программная инженерия">
                     </div>
                     <div class="form-group">
                         <label for="user-year-of-study">Курс</label>
-                        <input type="number" id="user-year-of-study" name="year_of_study" min="1" max="6">
+                        <input type="number" id="user-year-of-study" name="year_of_study" min="1" max="6" placeholder="От 1 до 6">
                     </div>
                 </div>
                 
-                <!-- Поля для сотрудника/админа -->
+                <!-- Поля для сотрудника -->
                 <div id="staff-fields" style="display: none;">
+                    <h4 style="margin: 15px 0 10px 0; color: #2563eb; font-size: 16px;">Информация о сотруднике</h4>
                     <div class="form-group">
                         <label for="user-position">Должность *</label>
-                        <input type="text" id="user-position" name="position">
+                        <input type="text" id="user-position" name="position" placeholder="Например: Декан">
                     </div>
                     <div class="form-group">
-                        <label for="user-department">Отдел/Кафедра</label>
-                        <input type="text" id="user-department" name="department">
+                        <label for="user-department">Кафедра *</label>
+                        <input type="text" id="user-department" name="department" placeholder="Например: Кафедра информатики">
                     </div>
                 </div>
                 
