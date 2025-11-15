@@ -126,3 +126,22 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+
+# Project specific
+uploads/
+backups/
+*.sql
+*.sql.gz
+
+# SSL certificates
+nginx/ssl/*
+!nginx/ssl/.gitkeep
+certbot/
+
+# Database
+postgres_data/
+redis_data/
+
+# Logs
+*.log
+logs/
