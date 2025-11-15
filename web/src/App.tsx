@@ -1,36 +1,34 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios'
-import './App.css'
+import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
+import './App.css';
+import ApplicationsPage from './pages/ApplicationsPage';
+import ApplicationFormPage from "./pages/ApplicationFormPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import ApplicationDetailsPage from "./pages/ApplicationDetailsPage";
+
+import MaxRedirectHandler from "./MaxRedirectHandler";
 
 function App() {
-  const [data, setData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+    return (
+        <Router>
+            <MaxRedirectHandler />
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/api/data')
-        setData(response.data)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        setData({ message: 'Error connecting to API' })
-      } finally {
-        setLoading(false)
-      }
-    }
+            <div className="App">
+                <Routes>
+                    {/* Страница со списком заявок */}
+                    <Route path="/applications" element={<ApplicationsPage/>}/>
 
-    fetchData()
-  }, [])
+                    {/* Страница создания заявки */}
+                    <Route path="/applications/create" element={<ApplicationFormPage/>}/>
 
-  if (loading) return <div>Loading...</div>
+                    {/* Страница с информацией о заявке */}
+                    <Route path="/applications/:id" element={<ApplicationDetailsPage/>}/>
 
-  return (
-    <div className="App">
-      <h1>React Web App</h1>
-      <p>{data?.message}</p>
-      <p>Timestamp: {data?.timestamp}</p>
-    </div>
-  )
+                    {/* Страница 404 */}
+                    <Route path="*" element={<NotFoundPage/>}/>
+                </Routes>
+            </div>
+        </Router>
+    );
 }
 
-export default App
+export default App;

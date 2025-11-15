@@ -1,0 +1,84 @@
+========================================
+SWAGGER UI ДОКУМЕНТАЦИЯ API
+========================================
+
+Swagger UI успешно добавлен в проект!
+
+ДОСТУП К SWAGGER:
+-----------------
+После запуска API, Swagger UI доступен по адресу:
+http://localhost:3000/api-docs
+
+ВОЗМОЖНОСТИ:
+------------
+- Просмотр всех доступных эндпоинтов
+- Интерактивное тестирование API
+- Автоматическая документация из кода
+- Поддержка JWT авторизации
+
+КАК ИСПОЛЬЗОВАТЬ:
+-----------------
+1. Запустите API сервер:
+   cd api
+   npm run dev
+
+2. Откройте браузер и перейдите на:
+   http://localhost:3000/api-docs
+
+3. Для тестирования защищенных эндпоинтов:
+   - Нажмите кнопку "Authorize" в правом верхнем углу
+   - Введите JWT токен в формате: Bearer <ваш_токен>
+   - Нажмите "Authorize"
+
+4. Теперь можно тестировать любые эндпоинты:
+   - Раскройте нужный эндпоинт
+   - Нажмите "Try it out"
+   - Заполните параметры
+   - Нажмите "Execute"
+
+УСТАНОВЛЕННЫЕ ЗАВИСИМОСТИ:
+--------------------------
+- swagger-ui-express: ^4.6.3
+- swagger-jsdoc: ^6.2.8
+- @types/swagger-ui-express: ^4.1.6
+- @types/swagger-jsdoc: ^6.0.4
+
+ДОКУМЕНТИРОВАННЫЕ ЭНДПОИНТЫ:
+----------------------------
+✅ Auth (Авторизация)
+   - POST /api/auth/register - Регистрация
+   - POST /api/auth/login - Вход
+   - POST /api/auth/refresh - Обновление токена
+   - POST /api/auth/logout - Выход
+   - GET /api/auth/me - Информация о пользователе
+
+✅ Applications (Заявки)
+   - GET /api/applications - Мои заявки
+   - GET /api/applications/:id - Заявка по ID
+   - POST /api/applications - Создать заявку
+   - GET /api/applications/admin/all - Все заявки (admin/staff)
+
+✅ Files (Файлы)
+   - POST /api/applications/:id/upload - Загрузить файл
+   - GET /api/certificates/:id/file - Скачать файл
+   - DELETE /api/certificates/files/:fileId - Удалить файл
+
+✅ Certificates (Внутреннее API)
+   - Все существующие эндпоинты сертификатов
+
+СТРУКТУРА ФАЙЛОВ:
+-----------------
+api/src/config/swagger.ts - Конфигурация Swagger
+api/src/index.ts - Подключение Swagger UI
+api/src/routes/*.ts - JSDoc комментарии для документации
+
+НАСТРОЙКА:
+----------
+Swagger автоматически генерирует документацию из:
+1. OpenAPI схем в api/src/config/swagger.ts
+2. JSDoc комментариев в роутах (api/src/routes/*.ts)
+
+Никаких дополнительных переменных окружения не требуется!
+
+========================================
+

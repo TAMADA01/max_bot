@@ -1,0 +1,19 @@
+{
+	"welcome": "Welcome!",
+	"chooseRole": "Choose your role:",
+	"student": "I am a student",
+	"deanery": "I am a deanery",
+	"studentMenu": "Student menu:",
+	"viewApplications": "View applications",
+	"createApplication": "Create application",
+	"authRequired": "Authorization is required to access deanery functions.",
+	"enterLogin": "Enter login:",
+	"enterPassword": "Enter password:",
+	"authSuccess": "Authorization successful! Welcome, {name}!",
+	"authFailed": "Invalid login or password. Please try again.",
+	"authError": "An error occurred during authorization. Please try later.",
+	"alreadyAuthorized": "You are already authorized.",
+	"cancel": "Cancel",
+	"back": "Back"
+}
+
